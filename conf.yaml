@@ -1,0 +1,6 @@
+
+debug : True
+epochs : 1
+train : True
+optimizer : adam
+batch_size : 512
