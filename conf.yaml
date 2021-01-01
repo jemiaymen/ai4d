@@ -1,6 +1,6 @@
-
-debug : True
-epochs : 1
 train : True
-optimizer : adam
-batch_size : 512
+optimizer : Nadam
+batch_size : 256
+dim : 64
+dropout : 0.1
+max_words : 30000

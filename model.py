@@ -108,7 +108,8 @@ class Solution():
             model.add(Embedding(self.config.max_words, self.config.dim,input_length = self.X.shape[1]))
             model.add(SpatialDropout1D( self.config.dropout ))
             model.add(LSTM(self.config.dim, return_sequences=True))
-            model.add(LSTM(self.config.dim, dropout=self.config.dropout, recurrent_dropout=self.config.dropout ))
+            model.add(LSTM(self.config.dim, return_sequences=True))
+            model.add(LSTM(self.config.dim))
             model.add(Dense(3,activation='softmax'))
 
             self.model = model
