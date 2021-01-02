@@ -139,7 +139,7 @@ class Solution():
         os.environ['WANDB_ANONYMOUS'] = 'allow'
         wandb.init(project=self.config.wandb_project)
 
-        early_stop_callback = keras.callbacks.EarlyStopping(monitor='val_loss',patience=3)
+        early_stop_callback = keras.callbacks.EarlyStopping(monitor='val_loss',patience=self.config.patience)
 
         self.model.compile(loss=self.config.loss,optimizer=self.config.optimizer , metrics=self.config.metrics)
 
@@ -164,7 +164,8 @@ class Config():
                  dim = 128,debug = False, optimizer = 'NAdam' , loss='categorical_crossentropy' , 
                  metrics = ['accuracy'] , wandb_project = 'ai4d' , validation_split = 0.2,
                  epochs=1000,train = False , model_type = 'LSTM',model_name = 'model.h5',
-                 max_len = 300 , max_words = 3000 , create_submit = False ,dropout = 0.2
+                 max_len = 300 , max_words = 3000 , create_submit = False ,dropout = 0.2,
+                 patience = 10
                 ):
         self.data_path = data_path
         self.batch_size = batch_size
@@ -184,3 +185,4 @@ class Config():
         self.max_words = max_words
         self.create_submit = create_submit
         self.dropout = dropout
+        self.patience = patience
