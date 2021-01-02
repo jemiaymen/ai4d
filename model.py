@@ -7,14 +7,15 @@ import string
 import sys
 import unidecode
 from tensorflow import keras
+import numpy as np
 
 
 from keras.preprocessing.text import  Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 
 from keras.models import  Model , Sequential
-from keras.layers import Dense,LSTM,GRU,Input , SpatialDropout1D ,Embedding , Dropout
-
+from keras.layers import Dense,LSTM,GRU,Input , SpatialDropout1D ,Embedding , Dropout , Bidirectional , GlobalMaxPool1D
+from keras.regularizers import l2
 
 class Solution():
     def __init__(self,config='conf.yaml'):
@@ -47,15 +48,10 @@ class Solution():
 
         if self.config.debug :
 
-            self.config.max_len = self.x.apply(lambda x: self.word_count(x)).max()
-
             tqdm.pandas(desc='Create input chars')
 
             self.x.progress_apply(lambda x : self.create_input_chars(x))
-            
-            print('-------------------------------------------------')
-            print('-------------------------------------------------')
-            print('max len : {}'.format(self.config.max_len))
+
             print('-------------------------------------------------')
             print('-------------------------------------------------')
             print(self.x.head(10))
@@ -89,12 +85,12 @@ class Solution():
                 self.input_chars.add(char)
             
     def create_tokens(self):
-        self.tokenizer = Tokenizer(split=' ')
+        self.tokenizer = Tokenizer(num_words=self.config.max_words)
         self.tokenizer.fit_on_texts(self.x.values)
         self.seq_dict = self.tokenizer.word_index
         self.word_dict = dict((num,val) for (val,num) in self.seq_dict.items() )
         X = self.tokenizer.texts_to_sequences(self.x.values)
-        self.X = pad_sequences(X,maxlen=self.config.max_words,truncating='post')
+        self.X = pad_sequences(X,maxlen=self.config.max_len)
 
         if self.config.debug:
             print('-------------------------------------------------')
@@ -115,12 +111,21 @@ class Solution():
             # model.add(Dense(self.config.dim,activation='relu'))
             # model.add(Dense(3,activation='softmax'))
 
+            # model = Sequential()
+            # model.add(Embedding(len(self.word_dict), self.config.max_words ,input_length = self.X.shape[1]))
+            # model.add(LSTM(self.config.dim, dropout=self.config.dropout , recurrent_dropout=self.config.dropout))
+            # model.add(Dropout(self.config.dropout))
+            # model.add(Dense(3,activation='softmax'))
 
-            model = Sequential()
-            model.add(Embedding(len(self.word_dict), self.config.max_words ,input_length = self.X.shape[1]))
-            model.add(LSTM(self.config.dim, dropout=self.config.dropout , recurrent_dropout=self.config.dropout))
-            model.add(Dropout(self.config.dropout))
-            model.add(Dense(3,activation='softmax'))
+            inp = Input(shape=(self.config.max_len,))
+            x = Embedding(self.config.max_words, self.config.max_len ,input_length = self.X.shape[1])(inp)
+            x = Bidirectional(LSTM(self.config.dim, return_sequences=True, dropout=self.config.dropout, recurrent_dropout=self.config.dropout , kernel_regularizer=l2(0.01), recurrent_regularizer=l2(0.01), bias_regularizer=l2(0.01)))(x)
+            x = GlobalMaxPool1D()(x)
+            x = Dense(self.config.dim, activation="sigmoid")(x)
+            x = Dropout(self.config.dropout)(x)
+            x = Dense(3, activation='softmax')(x)
+            model = Model(inputs=inp, outputs=x)
+
 
             self.model = model
 
@@ -187,7 +192,7 @@ class Config():
                  dim = 128,debug = False, optimizer = 'NAdam' , loss='categorical_crossentropy' , 
                  metrics = ['accuracy'] , wandb_project = 'ai4d' , validation_split = 0.2,
                  epochs=1000,train = False , model_type = 'LSTM',model_name = 'model.h5',
-                 max_len = 300 , max_words = 100 , create_submit = False ,dropout = 0.2,
+                 max_len = 100 , max_words = 20000 , create_submit = False ,dropout = 0.2,
                  patience = 10
                 ):
         self.data_path = data_path

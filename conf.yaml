@@ -1,6 +1,7 @@
 train : True
-optimizer : Nadam
+optimizer : adam
 batch_size : 128
-dim : 32
-dropout : 0.6
-max_words : 100
+dim : 50
+dropout : 0.1
+debug : True
+validation_split : 0.4
