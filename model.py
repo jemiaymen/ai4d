@@ -89,11 +89,12 @@ class Solution():
                 self.input_chars.add(char)
             
     def create_tokens(self):
-        tokenizer = Tokenizer(num_words=self.config.max_words, split=' ')
-        tokenizer.fit_on_texts(self.x.values)
-        X = tokenizer.texts_to_sequences(self.x.values)
-        X = pad_sequences(X)
-        self.X = X
+        self.tokenizer = Tokenizer(split=' ')
+        self.tokenizer.fit_on_texts(self.x.values)
+        self.seq_dict = self.tokenizer.word_index
+        self.word_dict = dict((num,val) for (val,num) in self.seq_dict.items() )
+        X = self.tokenizer.texts_to_sequences(self.x.values)
+        self.X = pad_sequences(X,maxlen=self.config.max_words,truncating='post')
 
         if self.config.debug:
             print('-------------------------------------------------')
@@ -105,25 +106,40 @@ class Solution():
             
 
             model = Sequential()
-            model.add(Embedding(self.config.max_words, self.config.dim,input_length = self.X.shape[1]))
-            model.add(SpatialDropout1D( self.config.dropout ))
-            model.add(LSTM(self.config.dim, return_sequences=True))
+            model.add(Embedding(len(self.word_dict), self.config.max_words ,input_length = self.X.shape[1]))
+            model.add(LSTM(self.config.dim, return_sequences=True , recurrent_dropout=self.config.dropout))
             model.add(Dropout(self.config.dropout))
-            model.add(LSTM(self.config.dim, return_sequences=True))
+            model.add(LSTM(self.config.dim, return_sequences=True , recurrent_dropout=self.config.dropout ))
             model.add(Dropout(self.config.dropout))
-            model.add(LSTM(self.config.dim))
+            model.add(LSTM(self.config.dim , recurrent_dropout=self.config.dropout))
+            model.add(Dense(self.config.dim,activation='relu'))
             model.add(Dense(3,activation='softmax'))
 
             self.model = model
 
         if self.config.model_type == 'GRU':
+
             model = Sequential()
-            model.add(Embedding(self.config.max_words, self.config.dim,input_length = self.X.shape[1]))
-            model.add(SpatialDropout1D(self.config.dropout))
-            model.add(GRU(self.config.dim, return_sequences=True))
+            model.add(Embedding(len(self.word_dict), self.config.max_words ,input_length = self.X.shape[1]))
+            model.add(GRU(self.config.dim, return_sequences=True , recurrent_dropout=self.config.dropout))
             model.add(Dropout(self.config.dropout))
-            model.add(GRU(self.config.dim, return_sequences=True))
-            model.add(GRU(self.config.dim, dropout=self.config.dropout, recurrent_dropout=self.config.dropout ))
+            model.add(GRU(self.config.dim, return_sequences=True , recurrent_dropout=self.config.dropout ))
+            model.add(Dropout(self.config.dropout))
+            model.add(GRU(self.config.dim , recurrent_dropout=self.config.dropout))
+            model.add(Dense(self.config.dim,activation='relu'))
+            model.add(Dense(3,activation='softmax'))
+
+            self.model = model
+
+        if self.config.model_type == 'MLP':
+            model = Sequential()
+            model.add(Dense(len(self.word_dict), input_shape=(self.X.shape[1],) , activation="relu"))
+            model.add(Dropout(self.config.dropout))
+            model.add(Dense(self.config.dim,activation='relu'))
+            model.add(Dropout(self.config.dropout))
+            model.add(Dense(self.config.dim,activation="relu"))
+            model.add(Dropout(self.config.dropout))
+            model.add(Dense(self.config.dim , activation="relu"))
             model.add(Dense(3,activation='softmax'))
 
             self.model = model
@@ -164,7 +180,7 @@ class Config():
                  dim = 128,debug = False, optimizer = 'NAdam' , loss='categorical_crossentropy' , 
                  metrics = ['accuracy'] , wandb_project = 'ai4d' , validation_split = 0.2,
                  epochs=1000,train = False , model_type = 'LSTM',model_name = 'model.h5',
-                 max_len = 300 , max_words = 3000 , create_submit = False ,dropout = 0.2,
+                 max_len = 300 , max_words = 100 , create_submit = False ,dropout = 0.2,
                  patience = 10
                 ):
         self.data_path = data_path
