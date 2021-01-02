@@ -1,6 +1,6 @@
 train : True
-optimizer : adam
-batch_size : 64
-dim : 100
-dropout : 0.5
+optimizer : Nadam
+batch_size : 128
+dim : 32
+dropout : 0.6
 max_words : 100
