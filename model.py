@@ -39,9 +39,12 @@ class Solution():
         if not os.path.exists(self.config.data_path):
             raise Exception("data not found !")
         self.data = pd.read_csv(self.config.data_path,encoding='utf8',index_col=0 ,sep=',')
-        tqdm.pandas(desc='Cleaning dataset from noise ')
+        
+        if self.config.clean_data :
+            tqdm.pandas(desc='Cleaning dataset from noise ')
+            self.x = self.data['text'].progress_apply(lambda x: self.clean_text(x))
 
-        self.x = self.data['text'].progress_apply(lambda x: self.clean_text(x))
+
         self.y = pd.get_dummies(self.data['label'])
 
         
@@ -193,7 +196,7 @@ class Config():
                  metrics = ['accuracy'] , wandb_project = 'ai4d' , validation_split = 0.2,
                  epochs=1000,train = False , model_type = 'LSTM',model_name = 'model.h5',
                  max_len = 100 , max_words = 20000 , create_submit = False ,dropout = 0.2,
-                 patience = 10
+                 patience = 10 , clean_data = False
                 ):
         self.data_path = data_path
         self.batch_size = batch_size
@@ -214,3 +217,4 @@ class Config():
         self.create_submit = create_submit
         self.dropout = dropout
         self.patience = patience
+        self.clean_data = clean_data

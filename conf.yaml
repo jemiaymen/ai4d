@@ -1,7 +1,8 @@
 train : True
-optimizer : adam
-batch_size : 128
-dim : 50
+optimizer : rmsprop
+batch_size : 32
+dim : 32
 dropout : 0.1
 debug : True
-validation_split : 0.4
+validation_split : 0.1
+patience : 50
