@@ -43,6 +43,8 @@ class Solution():
         if self.config.clean_data :
             tqdm.pandas(desc='Cleaning dataset from noise ')
             self.x = self.data['text'].progress_apply(lambda x: self.clean_text(x))
+        else:
+            self.x = self.data['text']
 
 
         self.y = pd.get_dummies(self.data['label'])
