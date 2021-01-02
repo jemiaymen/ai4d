@@ -1,6 +1,6 @@
 train : True
-optimizer : Nadam
+optimizer : rmsprop
 batch_size : 256
-dim : 64
-dropout : 0.1
+dim : 16
+dropout : 0.4
 max_words : 30000

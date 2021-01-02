@@ -13,7 +13,7 @@ from keras.preprocessing.text import  Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 
 from keras.models import  Model , Sequential
-from keras.layers import Dense,LSTM,GRU,Input , SpatialDropout1D ,Embedding
+from keras.layers import Dense,LSTM,GRU,Input , SpatialDropout1D ,Embedding , Dropout
 
 
 class Solution():
@@ -108,7 +108,9 @@ class Solution():
             model.add(Embedding(self.config.max_words, self.config.dim,input_length = self.X.shape[1]))
             model.add(SpatialDropout1D( self.config.dropout ))
             model.add(LSTM(self.config.dim, return_sequences=True))
+            model.add(Dropout(self.config.dropout))
             model.add(LSTM(self.config.dim, return_sequences=True))
+            model.add(Dropout(self.config.dropout))
             model.add(LSTM(self.config.dim))
             model.add(Dense(3,activation='softmax'))
 
@@ -118,6 +120,8 @@ class Solution():
             model = Sequential()
             model.add(Embedding(self.config.max_words, self.config.dim,input_length = self.X.shape[1]))
             model.add(SpatialDropout1D(self.config.dropout))
+            model.add(GRU(self.config.dim, return_sequences=True))
+            model.add(Dropout(self.config.dropout))
             model.add(GRU(self.config.dim, return_sequences=True))
             model.add(GRU(self.config.dim, dropout=self.config.dropout, recurrent_dropout=self.config.dropout ))
             model.add(Dense(3,activation='softmax'))
@@ -135,6 +139,8 @@ class Solution():
         os.environ['WANDB_ANONYMOUS'] = 'allow'
         wandb.init(project=self.config.wandb_project)
 
+        early_stop_callback = keras.callbacks.EarlyStopping(monitor='val_loss',patience=3)
+
         self.model.compile(loss=self.config.loss,optimizer=self.config.optimizer , metrics=self.config.metrics)
 
         self.model.fit(
@@ -143,7 +149,7 @@ class Solution():
             batch_size=self.config.batch_size,
             epochs=self.config.epochs,
             validation_split=self.config.validation_split,
-            callbacks=[WandbCallback()],shuffle=True
+            callbacks=[WandbCallback(),early_stop_callback],shuffle=True
         )
 
         self.model.save_weights(self.config.model_name)
