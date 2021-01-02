@@ -3,3 +3,4 @@ PyYAML>=5.1
 Unidecode
 tqdm
 wandb
+fasttext

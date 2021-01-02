@@ -1,8 +1,10 @@
-train : True
 optimizer : rmsprop
 batch_size : 32
 dim : 32
 dropout : 0.1
 debug : True
-validation_split : 0.1
+validation_split : 0.5
 patience : 50
+epochs : 20
+model_type : FASTTEXT
+clean_data : True

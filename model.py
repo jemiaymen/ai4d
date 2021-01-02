@@ -17,6 +17,10 @@ from keras.models import  Model , Sequential
 from keras.layers import Dense,LSTM,GRU,Input , SpatialDropout1D ,Embedding , Dropout , Bidirectional , GlobalMaxPool1D
 from keras.regularizers import l2
 
+import fasttext
+import csv
+from sklearn.model_selection import train_test_split
+
 class Solution():
     def __init__(self,config='conf.yaml'):
         if os.path.exists(config):
@@ -28,9 +32,16 @@ class Solution():
             self.config = Config()
 
         self.input_chars = set()
-        self.load_data()
-        self.create_tokens()
-        self.create_model()
+
+        if self.config.model_type == 'FASTTEXT':
+
+            self.load_data_for_fasttext()
+            self.model = fasttext.train_supervised(input=self.config.fasttext , autotuneValidationFile= self.config.fasttext_valid , verbose = 5 , autotuneDuration= self.config.duration )
+
+        else:
+            self.load_data()
+            self.create_tokens()
+            self.create_model()
 
         if self.config.train:
             self.train()
@@ -67,6 +78,53 @@ class Solution():
             print('-------------------------------------------------')
             print(self.input_chars)
     
+    def load_data_for_fasttext(self):
+        if not os.path.exists(self.config.data_path):
+            raise Exception("data not found !")
+        self.data = pd.read_csv(self.config.data_path,encoding='utf8',index_col=0 ,sep=',')
+
+        self.data = self.data[['label','text']]
+
+        tqdm.pandas(desc='Change label format for fasttext')
+
+        self.data['label'] = self.data['label'].progress_apply(lambda x : self.change_label(x))
+
+        
+
+        if self.config.clean_data :
+            tqdm.pandas(desc='Cleaning dataset from noise ')
+            self.data['text'] = self.data['text'].progress_apply(lambda x: self.clean_text(x))
+ 
+        self.data.to_csv('fast',encoding='utf8',index=None,header=None , sep=' ', quoting=csv.QUOTE_NONE , escapechar=' ' , quotechar='') 
+
+        self.data = pd.read_csv('fast',header=None,encoding='utf8')
+
+        train , valid = train_test_split(self.data, test_size = self.config.validation_split)
+
+        train = pd.DataFrame(train)
+
+        valid = pd.DataFrame(valid)
+
+        if self.config.debug:
+            print('-------------------------------------------------')
+            print('-------------------------------------------------')
+            print(train.head(10))
+            print('-------------------------------------------------')
+            print('-------------------------------------------------')
+            print(valid.head(10))
+
+        train.to_csv(self.config.fasttext,encoding='utf8',index=None,header=None )
+        valid.to_csv(self.config.fasttext_valid,encoding='utf8',index=None,header=None )
+    
+    def change_label(self,data):
+
+        if data == -1:
+            return '__label__neg'
+        if data == 0:
+            return '__label__neu'
+        else:
+            return '__label__pos'
+
     def word_count(self,line):
         return len(line.split())
 
@@ -198,7 +256,7 @@ class Config():
                  metrics = ['accuracy'] , wandb_project = 'ai4d' , validation_split = 0.2,
                  epochs=1000,train = False , model_type = 'LSTM',model_name = 'model.h5',
                  max_len = 100 , max_words = 20000 , create_submit = False ,dropout = 0.2,
-                 patience = 10 , clean_data = False
+                 patience = 10 , clean_data = False , fasttext = 'fast.train' , fasttext_valid = 'fast.valid' , duration = 600
                 ):
         self.data_path = data_path
         self.batch_size = batch_size
@@ -220,3 +278,6 @@ class Config():
         self.dropout = dropout
         self.patience = patience
         self.clean_data = clean_data
+        self.fasttext = fasttext
+        self.fasttext_valid = fasttext_valid
+        self.duration = duration
