@@ -49,6 +49,8 @@ class Solution():
 
         if self.config.train and self.config.model_type != 'FASTTEXT' :
             self.train()
+        elif self.config.model_type != 'FASTTEXT' :
+            self.load_model()
 
     def load_data(self):
         if not os.path.exists(self.config.data_path):
@@ -258,10 +260,13 @@ class Solution():
         )
 
         self.model.save_weights(self.config.model_name)
-        self.model.save(os.path.join(wandb.run.dir, self.config.model_name))
+
         if self.config.debug:
             print('------------------------------------')
             print('weights saved {} ...'.format(self.config.model_name))
+
+    def load_model(self):
+        self.model.load_weights(self.config.model_name)
     
     def create_submission(self,test_path):
         if not os.path.exists(test_path):
@@ -275,14 +280,22 @@ class Solution():
 
         tqdm.pandas(desc='Predict submission ... ')
         
-        test['label'] = test['text'].progress_apply(lambda x: self.predict(x))
+        test['label'] = test['text'][:200].progress_apply(lambda x: self.predict(x))
+        test['label'].astype('int32')
 
         test = test.drop(['text'] , axis=1)
         test.to_csv(self.config.submit_path)
 
     def predict(self,line):
-        r = self.model.predict(line)
-        return self.change_label(r[0][0],reverse = True)
+        if self.config.model_type == 'FASTTEXT':
+            r = self.model.predict(line)
+            return self.change_label(r[0][0],reverse = True)
+
+        X = self.tokenizer.texts_to_sequences(line)
+        X = pad_sequences(X,maxlen=self.config.max_len)
+        r = self.model.predict(X)
+
+        return np.argmax(np.sum(r, axis=0)) - 1 
 
 
 

@@ -5,8 +5,8 @@ dropout : 0.1
 debug : True
 validation_split : 0.3
 patience : 50
-epochs : 20
-model_type : FASTTEXT
+epochs : 2
+# model_type : FASTTEXT
 clean_data : True
-train : True
+# train : True
 duration : 5000
