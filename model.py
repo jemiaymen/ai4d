@@ -280,7 +280,7 @@ class Solution():
 
         tqdm.pandas(desc='Predict submission ... ')
         
-        test['label'] = test['text'][:200].progress_apply(lambda x: self.predict(x))
+        test['label'] = test['text'].progress_apply(lambda x: self.predict(x))
         test['label'].astype('int32')
 
         test = test.drop(['text'] , axis=1)

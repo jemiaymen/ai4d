@@ -3,10 +3,11 @@ batch_size : 32
 dim : 32
 dropout : 0.1
 debug : True
-validation_split : 0.3
-patience : 50
-epochs : 2
-# model_type : FASTTEXT
+validation_split : 0.1
+patience : 500
+epochs : 1000
+model_type : LSTM
 clean_data : True
-# train : True
 duration : 5000
+model_name : /content/drive/MyDrive/ai4d/model_lstm_32.h5
+submit_path : /content/drive/MyDrive/ai4d/sub_lstm_32.csv
