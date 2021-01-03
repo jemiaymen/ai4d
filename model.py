@@ -35,15 +35,19 @@ class Solution():
 
         if self.config.model_type == 'FASTTEXT':
 
-            self.load_data_for_fasttext()
-            self.model = fasttext.train_supervised(input=self.config.fasttext , autotuneValidationFile= self.config.fasttext_valid , verbose = 5 , autotuneDuration= self.config.duration )
+            if self.config.train:
+                self.load_data_for_fasttext()
+                self.model = fasttext.train_supervised(input=self.config.fasttext  , autotuneValidationFile= self.config.fasttext_valid , verbose = 1 , autotuneDuration= self.config.duration )
+                self.model.save_model(self.config.model_name)
+            else :
+                self.model = fasttext.load_model(self.config.model_name)
 
         else:
             self.load_data()
             self.create_tokens()
             self.create_model()
 
-        if self.config.train:
+        if self.config.train and self.config.model_type != 'FASTTEXT' :
             self.train()
 
     def load_data(self):
@@ -116,14 +120,24 @@ class Solution():
         train.to_csv(self.config.fasttext,encoding='utf8',index=None,header=None )
         valid.to_csv(self.config.fasttext_valid,encoding='utf8',index=None,header=None )
     
-    def change_label(self,data):
+    def change_label(self,data , reverse = False):
 
-        if data == -1:
-            return '__label__neg'
-        if data == 0:
-            return '__label__neu'
+        if reverse:
+
+            if data == '__label__neg':
+                return -1
+            if data == '__label__neu' :
+                return 0
+            if data == '__label__pos':
+                return 1
         else:
-            return '__label__pos'
+
+            if data == -1:
+                return '__label__neg'
+            if data == 0:
+                return '__label__neu'
+            else:
+                return '__label__pos'
 
     def word_count(self,line):
         return len(line.split())
@@ -249,6 +263,28 @@ class Solution():
             print('------------------------------------')
             print('weights saved {} ...'.format(self.config.model_name))
     
+    def create_submission(self,test_path):
+        if not os.path.exists(test_path):
+            raise Exception("data test not found !")
+        test = pd.read_csv(test_path,encoding='utf8',index_col=0 ,sep=',')
+
+        if self.config.clean_data :
+            tqdm.pandas(desc='Cleaning dataset from noise ')
+            test['text'] = test['text'].progress_apply(lambda x: self.clean_text(x))
+            test['label'] = 0
+
+        tqdm.pandas(desc='Predict submission ... ')
+        
+        test['label'] = test['text'].progress_apply(lambda x: self.predict(x))
+
+        test = test.drop(['text'] , axis=1)
+        test.to_csv(self.config.submit_path)
+
+    def predict(self,line):
+        r = self.model.predict(line)
+        return self.change_label(r[0][0],reverse = True)
+
+
 
 class Config():
     def __init__(self,data_path='Train.csv',submit_path='Submit.csv',batch_size=128,
