@@ -1,8 +1,8 @@
-epochs : 1000
+epochs : 2
 clean_data : True
-train : True
+# train : True
 create_submit : True
 result_labels : [-1, 0 , 1 ]
 debug : True
-model_name : /content/drive/MyDrive/ai4d/trans_1000_32.h5
-submit_path : /content/drive/MyDrive/ai4d/trans_1000_32.csv
+# model_name : /content/drive/MyDrive/ai4d/trans_1000_32.h5
+# submit_path : /content/drive/MyDrive/ai4d/trans_1000_32.csv

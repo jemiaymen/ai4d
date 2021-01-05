@@ -243,6 +243,7 @@ class TransformerClassifier():
         os.environ['WANDB_ANONYMOUS'] = 'allow'
         wandb.init(project=self.config.wandb_project)
 
+        early_stop_callback = keras.callbacks.EarlyStopping(monitor='val_loss',patience=self.config.patience)
 
         self.model.compile(loss=self.config.loss,optimizer=self.config.optimizer , metrics=self.config.metrics)
 
@@ -252,7 +253,7 @@ class TransformerClassifier():
             batch_size=self.config.batch_size,
             epochs=self.config.epochs,
             validation_split=self.config.validation_split,
-            callbacks=[WandbCallback()],shuffle=True
+            callbacks=[WandbCallback(),early_stop_callback],shuffle=True
         )
 
         self.model.save_weights(self.config.model_name)
@@ -272,11 +273,13 @@ class TransformerClassifier():
         if self.config.clean_data :
             tqdm.pandas(desc='Cleaning dataset from noise ')
             test['text'] = test['text'].progress_apply(lambda x: self.clean_text(x))
-            test['label'] = 0
+            test['label'] = '0'
 
         tqdm.pandas(desc='Predict submission ... ')
         
-        test['label'] = test['text'].progress_apply(lambda x: self.predict(x))
+        # test['label'] = test['text'].progress_apply(lambda x: self.predict(x))
+
+        test['label'] = self.predict_batch(test['text'].values)
         test['label'].astype('int32')
 
         test = test.drop(['text'] , axis=1)
@@ -298,6 +301,19 @@ class TransformerClassifier():
             print('------------------------------------')
         return self.config.result_labels[np.argmax(prediction)] 
 
+    def predict_batch(self,lines,batch_size=128):
+        self.tokenizer.lower = False
+        X = self.tokenizer.texts_to_sequences(lines)
+        X = pad_sequences(X,maxlen=self.config.max_len)
+        predictions = self.model.predict(X , batch_size=batch_size)
+        print(lines)
+
+        re = []
+
+        for p in predictions:
+            re.append( self.config.result_labels[np.argmax(p)] )
+
+        return re
 
 
 class Utils():
