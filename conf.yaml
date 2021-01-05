@@ -1,13 +1,8 @@
-optimizer : rmsprop
-batch_size : 32
-dim : 32
-dropout : 0.1
-debug : True
-validation_split : 0.1
-patience : 500
 epochs : 1000
-model_type : LSTM
 clean_data : True
-duration : 5000
-model_name : /content/drive/MyDrive/ai4d/model_lstm_32.h5
-submit_path : /content/drive/MyDrive/ai4d/sub_lstm_32.csv
+train : True
+create_submit : True
+result_labels : [-1, 0 , 1 ]
+debug : True
+model_name : /content/drive/MyDrive/ai4d/trans_1000_32.h5
+submit_path : /content/drive/MyDrive/ai4d/trans_1000_32.csv

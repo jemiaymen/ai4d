@@ -37,7 +37,8 @@ class Solution():
 
             if self.config.train:
                 self.load_data_for_fasttext()
-                self.model = fasttext.train_supervised(input=self.config.fasttext  , autotuneValidationFile= self.config.fasttext_valid , verbose = 1 , autotuneDuration= self.config.duration )
+                self.model = fasttext.train_supervised(input=self.config.fasttext  , autotuneValidationFile= self.config.fasttext_valid , autotuneDuration= self.config.duration )
+                # self.model = fasttext.train_supervised(input=self.config.fasttext, lr=1.0, epoch= self.config.epochs , wordNgrams=2, bucket=200000, dim=50 )
                 self.model.save_model(self.config.model_name)
             else :
                 self.model = fasttext.load_model(self.config.model_name)
